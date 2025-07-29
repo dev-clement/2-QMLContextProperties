@@ -1,0 +1,30 @@
+= QML Context Property
+Context in QML holds the objects identified by id in a QML document.
+
+:toc:
+:sectnums:
+
+== Introduction
+Context holds the objects identified by _id_ in a QML document. You can either use link:https://docs.qt.io/qt-6/qqmlcontext.html#nameForObject[nameForObject]() as well as link:https://doc.qt.io/qt-6/qqmlcontext.html#objectForName[objectForName]() to retrieve them.
+
+NOTE: It is the responsibility of the creator to delete any `QQMLContext` it constructs if a `QQmlContext` is no longer needed, it must be destroyed explicitly. The simplest way to ensure this is to give the `QQmlContext` a link:https://doc.qt.io/qt-6/qobject.html#setParent[parent]
+
+=== The context hierarchy
+Contexts form a herarchy. The root of this herarchy is the QML engine's link:https://doc.qt.io/qt-6/qqmlengine.html#rootContext[root context]. Each QML component creates its own context when instantiated and some QML elements create extra contexts for themselves.
+
+While QML objects instantiated in a context are not strictly owned by that context, their bindings are. if a context is destroyed, the property bindings of outstanding QML objects will stop evaluating.
+
+== ContextProperty
+Contexts also allow data to be exposed to the QML components instantiated by the QML engine. Such data is inisible to any tooling, including the link:https://doc.qt.io/qt-6/qtqml-qtquick-compiler-tech.html[Qt Quick Compiler] and to future readers of the QML documents in question. It will only be exposed if the QML component is instantiated in the specific Cpp context you are envisioning. In other places, different context data may be exposed instead.
+
+Instead of using the QML context to expose data to your QML components, you should either create additional object properties to hold the data or use link:https://doc.qt.io/qt-6/qqmlintegration-h.html#QML_SINGLETON[singleton]. See link:https://doc.qt.io/qt-6/qtqml-cppintegration-exposecppstate.html[Exposing Cpp State to QML] for detailed explanation.
+
+Each QQmlContext contains a set of properties, distinct from its link:https://doc.qt.io/qt-6/qobject.html[QObject] properties, that allow data to be explicitly bound to a context by name. The context properties can be defined and updated by calling link:https://doc.qt.io/qt-6/qqmlcontext.html#setContextProperty[QQmlContext::setContextProperty]().
+
+To simplify binding and maintaining larger data sets, a context object can be set on a QQmlContex. All the properties of the context object are available by name in the context, as though they were all individually added through calls to link:https://doc.qt.io/qt-6/qqmlcontext.html#setContextProperty[QQmlContext::setContextProperty](). Changes to the property's values are detected through the property's notify signal. Setting a context object is both faster and easier than manually adding and maintaining context property values.
+
+All properties added explicitly by link:https://doc.qt.io/qt-6/qqmlcontext.html#setContextProperty[QQmlContext::setContextProperty]() take precedence over the context object's properties.
+
+Child contexts inherit the context properties of their parents; if a child context sets a context property key, value that already exists in its parent, the new context property overrides that of the parent.
+
+WARNING: Setting the context object or adding new context properties after an object has been created in that context is an expensive operation (essentially forcing all bindings to re-evaluate). Thus, if you need to use context properties, you should at least complete the "set up" of the context before using it to create any objects.
